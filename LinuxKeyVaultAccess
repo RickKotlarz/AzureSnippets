@@ -1,0 +1,26 @@
+# To access key vault from within a Linux VM do the following
+#   1. Create a system or user managed ID for that Linux VM
+#   2. Create the key vault and / or navigate to an existing key vault
+#   3. Navigate to [Setting] >> [Access policies]
+#   4. Select [Add Access Policy], select the permissions you want the VM to have, followed by the principal name of the VM (sometimes it doesn't auto populate so you may need to pull this directly from the VM)
+#   5. SSH into the VM and execute the following itmes below.
+
+# Provide your key vault path below
+export kv=https://keyvault20220708.vault.azure.net/secrets/demo-secret/1d7a665ad2ee4f939c7bbdbf1ebcbeb4
+export kv+=?api-version=2016-10-01
+
+# Run this in the Linux CLI - AS IS - to get the bearer token and strip out non-relevant header info
+export token=$(curl  -s 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fvault.azure.net' -H Metadata:true | gawk -F: '{ print $2 }' | gawk -F\" '{ print $2 }')
+
+# Returns the secret in JSON format
+curl -s $kv -H "Authorization: Bearer $token"
+
+# Returns the secret without extra JSON data
+curl -s $kv -H "Authorization: Bearer $token" | gawk -F: '{ print $2 }' | gawk -F\" '{ print $2 }'
+
+# Reference URLs:
+#Tutorial: Use a Linux VM system-assigned managed identity to access Azure Key Vault - cURL
+#   https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/tutorial-linux-vm-access-nonaad
+#
+# Azure Key Vault keys, secrets and certificates overview (used to build key vault URL)
+#   https://docs.microsoft.com/en-us/azure/key-vault/general/about-keys-secrets-certificates
